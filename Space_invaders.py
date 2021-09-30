@@ -1,31 +1,45 @@
+import sys
 from abc import ABC
 import pygame
-import typing
-import sys
+
+
 #  Program is under progress.
 
 
 class Settings:
-    def __init__(self, window_size: tuple, game_speed: int, ship_quantity: int) -> None:
-        self.__bg_photo = pygame.image.load("./Grafiken_SpaceInvaders/space_invaders_tank.png")
-        self.__game_speed = game_speed
-        self.__ship_quantity = ship_quantity
-        self.__screen = pygame.display.set_mode(window_size)
+    def __init__(self):
+        self.__bg_color = (0, 0, 0)
+        self.__game_speed = 50
+        self.__ship_quantity = 1
+        self.__window_size = [600, 600]
 
-    def initialise_pygame(self):
-        pygame.init()
+    @property
+    def window_size(self):
+        return self.__window_size
+
+    @window_size.setter
+    def window_size(self, value: list):
+        self.__window_size = value
 
 
 class Game(ABC):
-    def __init__(self, pos: tuple, sprite) -> None:
+    def __init__(self, sprite):
         self.__sprite = sprite
-        self.__pos = pos
-        self.__turn = ""
+        self.__pos = (0, 0)
 
-    def __move(self):
+    def move(self):
         pass
 
-    def __handle_keys(self):
+
+class Ship(Game, Settings, pygame.sprite.Sprite):
+    def __init__(self, sprite):
+        super(Game, self).__init__()
+        super(pygame.sprite.Sprite).__init__()
+        self.__image = pygame.image.load(sprite)
+        self.__rect = self.__image.get_rect()
+        self.__pos = (self.window_size[0]//2, self.window_size[1]*0.2)
+
+    def handle_keys(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -35,48 +49,70 @@ class Game(ABC):
                     pygame.quit()
                     sys.exit()
                 if event.key == pygame.K_LEFT:
-                    self.__turn = "Left"
+                    self.__pos[0] -= 3
                 elif event.key == pygame.K_RIGHT:
-                    self.__turn = "Right"
+                    self.__pos[0] += 3
 
+    def move(self):
+        pass
 
-    def __shoot(self):
+    def shoot(self):
         pass
 
 
-
-
-class Ship(Game):
-    def __init__(self, pos: tuple, sprite) -> None:
-        super().__init__(pos, sprite)
+class Barrier(Game, Settings):
+    def __init__(self, sprite):
+        super().__init__(sprite)
         self.__sprite = sprite
-        self.__pos = pos
-
-    def __move(self):
-        pass
-
-    def __shoot(self):
-        pass
-
-
-class Barrier(Game):
-    def __init__(self, pos: tuple, sprite) -> None:
-        super().__init__(pos, sprite)
-        self.__sprite = sprite
-        self.__pos = pos
 
     def block_oncoming(self):
         pass
 
+    def position(self):
+        pass
 
-class Enemies(Game):
-    def __init__(self, pos: tuple, sprite) -> None:
-        super().__init__(pos, sprite)
+
+class Enemies(Game, Settings):
+    def __init__(self, sprite):
+        super().__init__(sprite)
         self.__sprite = sprite
-        self.__pos = pos
 
     def __move(self):
         pass
 
     def __shoot(self):
         pass
+
+
+class Laser(pygame.sprite.Sprite):
+    def __init__(self, sprite):
+        super().__init__(sprite)
+        self.__sprite = sprite
+        self.__shoot = False
+
+    def handle_keys(self):
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    self.__shoot = not self.__shoot
+
+
+def main():
+    # initialise objects
+    pygame.init()
+    screen = pygame.display.set_mode((600, 600))
+    clock = pygame.time.Clock()
+    tank = Ship("./Grafiken_SpaceInvaders/space_invaders_tank.png")
+    tank_group = pygame.sprite.Group()
+    tank_group.add(tank)
+    while True:
+
+
+        pygame.display.update()
+
+        tank_group.draw(screen)
+        clock.tick(60)
+
+
+main()
+
