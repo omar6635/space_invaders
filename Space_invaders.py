@@ -8,7 +8,7 @@ class Settings:
     def __init__(self):
         self.bg_color = (0, 0, 0)
         self.game_speed = 50
-        self.enemy_quantity = 5
+        self.enemy_quantity = 30
         self.__window_size = (1000, 1000)
 
     @property
@@ -95,11 +95,17 @@ class Enemies(Game, Settings, pygame.sprite.Sprite):
 
 
 class Laser(Ship):
-    def __init__(self, sprite, pos):
+    def __init__(self, sprite, x, y):
         Ship.__init__(self, sprite)
-        self.sprite = pygame.transform.scale(pygame.image.load(sprite) , (5, 20))
+        self.sprite = pygame.transform.scale(pygame.image.load(sprite), (5, 20))
         self.rect = self.sprite.get_rect()
-        self.pos_ship = [pos[0]+23, pos[1]]
+        self.rect.x = x
+        self.rect.y = y
+        self.soundbyte = pygame.mixer.Sound("./soundbytes/And His Name is JOHN CENA - Sound Effect (HD) (online-audio-converter.com).wav")
+
+    def collision_detection(self, laser, enemy_group):
+        if pygame.sprite.spritecollide(laser, enemy_group, True):
+            self.soundbyte.play()
 
 
 def main():
@@ -110,40 +116,42 @@ def main():
     screen = pygame.display.set_mode(var)
     clock = pygame.time.Clock()
     tank = Ship("./Grafiken_SpaceInvaders/space_invaders_Tank.png")
-    enemy_init = Enemies("./Grafiken_SpaceInvaders/pog.jfif", 0, 0)
+    enemy_init = Enemies("./Grafiken_SpaceInvaders/pog.jfif", settings.window_size[0]//2, settings.window_size[1]//2)
     laser_fired = False
     enemy_group = pygame.sprite.Group()
-
+    draw_y = 0.1
+    draw_x = 1
     for enemy in range(settings.enemy_quantity):
-        enemy_obj = Enemies("./Grafiken_SpaceInvaders/pog.jfif", enemy_init.spawn_locations[enemy][0], enemy_init.spawn_locations[enemy][1])
-        enemy_group.add(enemy_obj)
+        if settings.window_size[0]*(0.1 * draw_x) > 900:
+            draw_y += 0.1
+            draw_x = 1
 
-        """if enemy != 11:
-            enemy_obj = Enemies("./Grafiken_SpaceInvaders/enemies.jpg", [settings.window_size[0]*(0.1 * (enemy+1)), settings.window_size[1]*0.1])
-        else:
-            enemy_obj = Enemies("./Grafiken_SpaceInvaders/enemies.jpg", [settings.window_size[0]*(0.1 * (enemy-10)), settings.window_size[1]*0.2])
-        enemy_group.add(enemy_obj)"""
+        enemy_obj = Enemies("./Grafiken_SpaceInvaders/enemies.jpg", settings.window_size[0]*(0.1 * draw_x), settings.window_size[1]*draw_y)
+        enemy_group.add(enemy_obj)
+        draw_x += 1
 
     while True:
 
         screen.fill((0, 0, 0))
-
         tank.handle_keys()
-
         if tank.fire_laser:  # can be simplified or improved
-            laser = Laser("./Grafiken_SpaceInvaders/shot.png", tank.position)
+            laser = Laser("./Grafiken_SpaceInvaders/shot.png", tank.position[0]+23, tank.position[1])
             tank.fire_laser = False
             laser_fired = True
 
         if laser_fired:  # can be simplified or improved
-            laser.pos_ship[1] -= 10
-            screen.blit(laser.sprite, (laser.pos_ship[0], laser.pos_ship[1]))
-            if laser.pos_ship[1] == 0:
+            laser.rect.move_ip(0, -7)
+            screen.blit(laser.sprite, laser.rect)
+            if laser.rect.y < 0:
                 tank.firing_allowed = True
+            laser.collision_detection(laser, enemy_group)
+
+
+
 
         screen.blit(tank.scaled_image, (tank.position[0], tank.position[1]))
         enemy_group.draw(screen)
-        pygame.display.flip()
+        pygame.display.update()
         clock.tick(60)
 
 
